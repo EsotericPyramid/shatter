@@ -1,0 +1,72 @@
+A basic homemade (i think) symmetric encryption algorithm
+
+The original idea for the algorithm came from trying to split a file into 
+multiple parts such that no useful information could be obtained unless
+a user had all (or at least most) of the parts.
+
+This lead to the following algorithm:
+
+first consider 8 bits: 01234567
+now define 8 new bits (0'1'2'3'4'5'6'7') xor-ed together from 7 of those bits as follows:
+
+0' = _1234567
+1' = 0_234567
+2' = 01_34567
+...
+
+which, defining the xor of all 8 bits as x becomes:
+
+0' = x ^ 0
+1' = x ^ 1
+2' = x ^ 2
+...
+
+From that we can obtain:
+
+0' ^ 1' ^ ... ^ 8' = (x ^ 0) ^ (x ^ 1) ^ ... ^ (x ^ 8) = 0 ^ 1 ^ ... ^ 8 = x
+
+From which we can obtain the original bits using:
+
+0 = x ^ 0'
+1 = x ^ 1'
+2 = x ^ 2'
+...
+
+Theoretically this process can be applied to any even number of bits although 8 was chosen for convenience
+
+In order to spread out the data, the process is applied as follows:
+
+1. from a group of 8 bytes, extract the first bit from each and apply the above process, writing the resulting byte to the first output stream.
+2. repeat 1 7 more times (8 total), moving from the first bit and first output to 2nd then 3rd etc.
+
+The inverse of that now is:
+
+1. xor together a byte from each output, this becomes a byte of original byte parities (x)
+2. xor that with a byte from an output to get the corresponding bit from a group of 8 bytes
+
+If the goal is as originally stated, then you are done, simply write the output to seperate files.
+
+All that was done to convert this algorithm into a basic symmetric key algorithm was shifting each output by some number of bytes (determined by the key) and then concatennating them.
+In order to prevent obtaining shifted plaintext, only the even bytes of the first output are shifted. 
+
+In terms of serperating data into multiple files such that all files are needed to recover it, this succeeded for the most part. 
+The only (known) faults are as follows:
+
+1. with 7 (or 1 less than the number of bits), exactly 1 bit from that group can be obtained with 100% certainty (practically useless)
+2. a part of a group of bits can be guessed with 50% certainty by guessing x (practically useless spread over an entire file)
+
+
+There is also another (but unimplemented) way to use this to encrypt by using 2 chunks (because of fault 1) as a key.
+In order to get the key smaller, just repeat that algorithm on the new key until it is a reasonable size if desired.
+
+The (potentially) large size of the key will make it impossible to acctually decrypt the original as it does not contain
+nearly enough information on its own, making any decoded values completely untrustable.
+
+In order to get around the fact that the algorithm requires a byte length divisible by 8 without adding any padding, the following can be done:
+
+-----------------
+    |-----------|
+  ^
+add space here to make other half divisble by 8.
+
+then on subsequent passes, start the pass on the far left, then past the first 2 encoded chunks and then added more bytes until divisble by 8.
