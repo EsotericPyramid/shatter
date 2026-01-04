@@ -70,3 +70,7 @@ In order to get around the fact that the algorithm requires a byte length divisi
 add space here to make other half divisble by 8.
 
 then on subsequent passes, start the pass on the far left, then past the first 2 encoded chunks and then added more bytes until divisble by 8.
+
+USAGE:
+
+shatter (encrypt|decrypt) key path ...
